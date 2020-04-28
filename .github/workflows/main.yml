@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ master braiam-patch-1 ]
+  pull_request:
+    branches: [ master braiam-patch-1 ]
+  create:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Installing build tools
+      run: sudo apt-get install devscripts fakeroot
+  
+    - name: Installing build dependencies
+      run: | 
+        sudo apt-get install debhelper \
+        dh-python python3 python3-setuptools \
+        python3-gi gobject-introspection gir1.2-gtk-3.0
+  
+    - name: Build using dpkg-buildpackage
+      run: dpkg-buildpackage -b -uc -us && pwd
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2-preview
+      with:
+        path: /home/runner/work/fah-control/*.deb
+
+    - name: Upload to Release Action
+      uses: Shopify/upload-to-release@1.0.0
+      with:
+        path: /home/runner/work/fah-control/*.deb
+        content-type: application/vnd.debian.binary-package
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload to release
+      uses: JasonEtco/upload-to-release@master
+      with:
+        args: /home/runner/work/fah-control/*.deb application/vnd.debian.binary-package
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
